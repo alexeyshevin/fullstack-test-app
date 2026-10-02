@@ -1,0 +1,5 @@
+{
+    "name": "@app/contracts",
+    "private": "true",
+    "main": "./src/index.ts"
+}
