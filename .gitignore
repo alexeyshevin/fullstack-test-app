@@ -1,0 +1,84 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+**/node_modules/
+
+# =========================
+# Build output
+# =========================
+dist/
+**/dist/
+build/
+**/build/
+
+# TypeScript
+*.tsbuildinfo
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# Test / coverage
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# Vite
+# =========================
+.vite/
+
+# =========================
+# Cache
+# =========================
+.cache/
+.tmp/
+temp/
+tmp/
+
+# =========================
+# IDE / Editors
+# =========================
+.idea/
+*.swp
+*.swo
+*~
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Docker
+# =========================
+docker-data/
+**/docker-data/
+
+# =========================
+# Misc
+# =========================
+*.local
