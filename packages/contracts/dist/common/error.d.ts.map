@@ -1,0 +1,1 @@
+{"version":3,"file":"error.d.ts","sourceRoot":"","sources":["../../src/common/error.ts"],"names":[],"mappings":"AAAA,MAAM,MAAM,YAAY,GACpB,kBAAkB,GAClB,gBAAgB,GAChB,qBAAqB,GACrB,sBAAsB,GACtB,uBAAuB,GACvB,mBAAmB,GACnB,iBAAiB,GACjB,gBAAgB,CAAC;AAErB,MAAM,MAAM,gBAAgB,GAAG;IAC7B,KAAK,EAAE;QACL,IAAI,EAAE,YAAY,CAAC;QACnB,OAAO,EAAE,MAAM,CAAC;KACjB,CAAC;CACH,CAAC"}

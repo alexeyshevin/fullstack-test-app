@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "@app/backend",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "dependencies": {
+    "@app/contracts": "*"
+  },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

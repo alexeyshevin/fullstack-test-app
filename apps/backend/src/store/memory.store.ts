@@ -1,11 +1,11 @@
-import { DEFAULT_MAX_ID, DEFAULT_MIN_ID } from "./memory-store.constants";
+import { DEFAULT_MAX_ID, DEFAULT_MIN_ID } from "./memory.store.constants";
 import {
-    InvalidReorderError,
-    ItemAlreadyExistsError,
-    ItemAlreadySelectedError,
-    ItemNotFoundError,
-    ItemNotSelectedError
-} from "./memory-store.errors";
+  InvalidReorderError,
+  ItemAlreadyExistsError,
+  ItemAlreadySelectedError,
+  ItemNotFoundError,
+  ItemNotSelectedError
+} from "./memory.store.errors";
 
 export type ReorderPlacement = 'before' | 'after';
 

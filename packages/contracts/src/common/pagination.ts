@@ -10,6 +10,7 @@ export type PaginatedResponse<T> = {
   items: T[];
   nextCursor: string | null;
   hasMore: boolean;
+  version: number;
 };
 
 export type FilterQuery = {

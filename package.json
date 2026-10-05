@@ -1,5 +1,5 @@
 {
-  "name": "fullstack-test",
+  "name": "fullstack-test-app",
   "private": true,
   "workspaces": [
     "apps/*",
