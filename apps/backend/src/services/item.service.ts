@@ -1,21 +1,6 @@
-import type {
-  GetItemsQuery,
-  GetItemsResponse,
-  ItemDto,
-} from '@app/contracts';
-
-import {
-  DEFAULT_PAGE_SIZE,
-  MAX_PAGE_SIZE,
-} from '@app/contracts';
-
-import {
-  DEFAULT_MAX_ID,
-} from '../store/memory.store.constants';
-
-import {
-  MemoryStore,
-} from '../store/memory.store';
+import { DEFAULT_PAGE_SIZE, GetItemsQuery, GetItemsResponse, ItemDto, MAX_PAGE_SIZE } from "@app/contracts";
+import { MemoryStore } from "../store/memory.store";
+import { DEFAULT_MAX_ID } from "../store/memory.store.constants";
 
 export class ItemsService {
   constructor(
