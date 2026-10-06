@@ -1,6 +1,5 @@
 import type { Command } from '@app/contracts';
 import type { Producer } from 'kafkajs';
-
 import { COMMANDS_TOPIC } from './kafka.config';
 
 export class CommandProducer {
