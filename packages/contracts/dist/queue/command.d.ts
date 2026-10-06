@@ -19,5 +19,5 @@ export type ReorderItemCommand = BaseCommand<'REORDER_ITEM', {
     targetId: number;
     placement: 'before' | 'after';
 }>;
-export type AppCommand = AddItemCommand | SelectItemCommand | UnselectItemCommand | ReorderItemCommand;
+export type Command = AddItemCommand | SelectItemCommand | UnselectItemCommand | ReorderItemCommand;
 //# sourceMappingURL=command.d.ts.map

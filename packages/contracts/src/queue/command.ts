@@ -41,7 +41,7 @@ export type ReorderItemCommand = BaseCommand<
   }
 >;
 
-export type AppCommand =
+export type Command =
   | AddItemCommand
   | SelectItemCommand
   | UnselectItemCommand
