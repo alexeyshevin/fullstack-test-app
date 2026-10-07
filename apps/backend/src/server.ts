@@ -71,5 +71,3 @@ start().catch(error => {
 
   process.exit(1);
 });
-
-void start();
