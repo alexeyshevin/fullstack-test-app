@@ -1,4 +1,12 @@
-import type { GetSelectedQuery, ReorderItemCommand, ReorderItemRequest, SelectItemCommand, SelectItemRequest, UnselectItemCommand, UnselectItemParams } from '@app/contracts';
+import type {
+  GetSelectedQuery,
+  ReorderItemCommand,
+  ReorderItemRequest,
+  SelectItemCommand,
+  SelectItemRequest,
+  UnselectItemCommand,
+  UnselectItemRequest
+} from '@app/contracts';
 import { Router } from 'express';
 import { CommandProducer } from '../kafka/command.producer';
 import type { SelectedItemsService } from '../services/selected-items.service';
@@ -70,7 +78,7 @@ export const createSelectedItemsRouter = (
     '/unselect',
     async (req, res) => {
       const body =
-        req.body as UnselectItemParams;
+        req.body as UnselectItemRequest;
 
       if (!isValidId(body.id)) {
         res.status(400).json({
