@@ -1,6 +1,6 @@
 import type { CommandAcceptedResponse } from '../common/command';
 
-export type UnselectItemParams = {
+export type UnselectItemRequest = {
   id: number;
 };
 
