@@ -1,9 +1,8 @@
 import {
-    Kafka,
+  Kafka,
 } from 'kafkajs';
 
-export const COMMANDS_TOPIC =
-  'selection-commands';
+export const COMMANDS_TOPIC = 'selection-commands';
 
 export const kafka = new Kafka({
   clientId: 'fullstack-test-app',
