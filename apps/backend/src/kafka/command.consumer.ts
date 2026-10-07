@@ -25,10 +25,9 @@ export class CommandConsumer {
           return;
         }
 
-        const command =
-          JSON.parse(
-            message.value.toString(),
-          ) as Command;
+        const command = JSON.parse(message.value.toString()) as Command;
+
+        console.log('Kafka command received:', command);
 
         this.batcher.add(command);
       },
