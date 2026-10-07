@@ -6,6 +6,7 @@ import { CommandProducer } from './kafka/command.producer';
 import { kafka } from './kafka/kafka.config';
 import { CommandStore } from './store/command.store';
 import { MemoryStore } from './store/memory.store';
+import { PendingItemsStore } from './store/pending-items.store';
 
 const PORT = Number(process.env.PORT ?? 3000);
 
@@ -15,9 +16,12 @@ const start =
 
     const commandStore = new CommandStore();
 
+    const pendingItemsStore = new PendingItemsStore();
+
     const commandHandler = new CommandHandler(
         store,
         commandStore,
+        pendingItemsStore
       );
 
     const addBatcher = new CommandBatcher(
@@ -79,6 +83,7 @@ const start =
       store,
       commandStore,
       commandProducer,
+      pendingItemsStore
     });
 
     app.listen(PORT, () => {

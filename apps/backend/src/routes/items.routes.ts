@@ -8,11 +8,12 @@ import { Router } from 'express';
 import type { CommandProducer } from '../kafka/command.producer';
 import type { ItemsService } from '../services/item.service';
 import type { CommandStore } from '../store/command.store';
-
+import type { PendingItemsStore } from '../store/pending-items.store';
 export const createItemsRouter = (
   service: ItemsService,
   commandProducer: CommandProducer,
   commandStore: CommandStore,
+  pendingItemsStore: PendingItemsStore,
 ): Router => {
   const router = Router();
 
@@ -59,6 +60,43 @@ export const createItemsRouter = (
       return;
     }
 
+    /*
+     * Проверяем уже существующее,
+     * committed-состояние.
+     */
+    if (service.hasItem(body.id)) {
+      res.status(409).json({
+        error: {
+          code: 'ITEM_ALREADY_EXISTS',
+          message:
+            `Item ${body.id} already exists`,
+        },
+      });
+
+      return;
+    }
+
+    /*
+     * Атомарно резервируем ID.
+     *
+     * Если add() вернул false,
+     * такой ADD уже ожидает обработки.
+     */
+    const reserved =
+      pendingItemsStore.add(body.id);
+
+    if (!reserved) {
+      res.status(409).json({
+        error: {
+          code: 'ITEM_ALREADY_PENDING',
+          message:
+            `Item ${body.id} is already pending`,
+        },
+      });
+
+      return;
+    }
+
     const command: AddItemCommand = {
       id: crypto.randomUUID(),
       type: 'ADD_ITEM',
@@ -75,6 +113,15 @@ export const createItemsRouter = (
         command,
       );
     } catch {
+      /*
+       * Kafka не приняла команду.
+       *
+       * Следовательно, ADD никогда
+       * не будет обработан и reservation
+       * необходимо снять.
+       */
+      pendingItemsStore.delete(body.id);
+
       commandStore.fail(
         command.id,
         'COMMAND_QUEUE_UNAVAILABLE',

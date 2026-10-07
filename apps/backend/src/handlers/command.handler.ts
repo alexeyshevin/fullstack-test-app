@@ -2,8 +2,17 @@ import type {
   ApiErrorCode,
   Command,
 } from '@app/contracts';
-import { CommandStore } from '../store/command.store';
-import { MemoryStore } from '../store/memory.store';
+
+import type {
+  CommandStore,
+} from '../store/command.store';
+import type {
+  MemoryStore,
+} from '../store/memory.store';
+import type {
+  PendingItemsStore,
+} from '../store/pending-items.store';
+
 import {
   InvalidReorderError,
   ItemAlreadyExistsError,
@@ -16,6 +25,7 @@ export class CommandHandler {
   constructor(
     private readonly store: MemoryStore,
     private readonly commandStore: CommandStore,
+    private readonly pendingItemsStore: PendingItemsStore,
   ) {}
 
   public handleBatch(
@@ -33,7 +43,7 @@ export class CommandHandler {
           command.id,
         );
 
-      // duplicate Kafka delivery
+      // Повторная доставка той же Kafka-команды.
       if (!shouldProcess) {
         continue;
       }
@@ -55,6 +65,22 @@ export class CommandHandler {
           normalized.code,
           normalized.message,
         );
+      } finally {
+        /*
+         * ADD_ITEM больше не pending независимо
+         * от результата выполнения команды.
+         *
+         * success:
+         * pending -> MemoryStore
+         *
+         * failure:
+         * pending -> failed
+         */
+        if (command.type === 'ADD_ITEM') {
+          this.pendingItemsStore.delete(
+            command.payload.id,
+          );
+        }
       }
     }
 
@@ -132,7 +158,10 @@ export class CommandHandler {
       };
     }
 
-    if (error instanceof ItemNotFoundError) {
+    if (
+      error instanceof
+      ItemNotFoundError
+    ) {
       return {
         code: 'ITEM_NOT_FOUND',
         message: error.message,
@@ -140,7 +169,8 @@ export class CommandHandler {
     }
 
     if (
-      error instanceof InvalidReorderError
+      error instanceof
+      InvalidReorderError
     ) {
       return {
         code: 'INVALID_REORDER',
@@ -150,7 +180,8 @@ export class CommandHandler {
 
     return {
       code: 'INTERNAL_ERROR',
-      message: 'Internal command processing error',
+      message:
+        'Internal command processing error',
     };
   }
 

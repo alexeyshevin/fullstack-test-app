@@ -9,18 +9,21 @@ import { ItemsService } from './services/item.service';
 import { SelectedItemsService } from './services/selected-items.service';
 import type { CommandStore } from './store/command.store';
 import type { MemoryStore } from './store/memory.store';
+import { PendingItemsStore } from './store/pending-items.store';
 import { openApiDocument } from './swagger/openapi';
 
 type CreateAppDependencies = {
   store: MemoryStore;
   commandStore: CommandStore;
   commandProducer: CommandProducer;
+  pendingItemsStore: PendingItemsStore
 };
 
 export const createApp = ({
   store,
   commandStore,
   commandProducer,
+  pendingItemsStore
 }: CreateAppDependencies) => {
   const app = express();
 
@@ -39,6 +42,7 @@ export const createApp = ({
       itemsService,
       commandProducer,
       commandStore,
+      pendingItemsStore
     ),
   );
 

@@ -7,6 +7,10 @@ export class ItemsService {
     private readonly store: MemoryStore,
   ) {}
 
+  public hasItem(id: number): boolean {
+    return this.store.hasItem(id);
+  }
+
   public getItems(
     query: GetItemsQuery,
   ): GetItemsResponse {
