@@ -37,9 +37,15 @@ const start = async (): Promise<void> => {
 
   await commandProducer.connect();
 
+  console.log('Kafka producer connected');
+
   await commandConsumer.connect();
 
+  console.log('Kafka consumer connected');
+
   await commandConsumer.run();
+
+  console.log('Kafka consumer started');
 
   const app = createApp({
     store,
@@ -56,5 +62,14 @@ const start = async (): Promise<void> => {
     );
   });
 };
+
+start().catch(error => {
+  console.error(
+    'Failed to start application:',
+    error,
+  );
+
+  process.exit(1);
+});
 
 void start();
