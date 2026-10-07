@@ -2,18 +2,23 @@ import type {
   GetSelectedQuery,
   ReorderItemCommand,
   ReorderItemRequest,
+  ReorderItemResponse,
   SelectItemCommand,
   SelectItemRequest,
+  SelectItemResponse,
   UnselectItemCommand,
-  UnselectItemRequest
+  UnselectItemRequest,
+  UnselectItemResponse,
 } from '@app/contracts';
 import { Router } from 'express';
-import { CommandProducer } from '../kafka/command.producer';
+import type { CommandProducer } from '../kafka/command.producer';
 import type { SelectedItemsService } from '../services/selected-items.service';
+import type { CommandStore } from '../store/command.store';
 
 export const createSelectedItemsRouter = (
   service: SelectedItemsService,
   commandProducer: CommandProducer,
+  commandStore: CommandStore,
 ): Router => {
   const router = Router();
 
@@ -49,8 +54,11 @@ export const createSelectedItemsRouter = (
 
       if (!isValidId(body.id)) {
         res.status(400).json({
-          error:
-            'id must be a positive safe integer',
+          error: {
+            code: 'VALIDATION_ERROR',
+            message:
+              'id must be a positive safe integer',
+          },
         });
 
         return;
@@ -65,12 +73,37 @@ export const createSelectedItemsRouter = (
         },
       };
 
-      await commandProducer.send(command);
+      commandStore.accept(command.id);
 
-      res.status(202).json({
-        accepted: true,
+      try {
+        await commandProducer.send(
+          command,
+        );
+      } catch {
+        commandStore.fail(
+          command.id,
+          'COMMAND_QUEUE_UNAVAILABLE',
+          'Failed to enqueue command',
+        );
+
+        res.status(503).json({
+          error: {
+            code:
+              'COMMAND_QUEUE_UNAVAILABLE',
+            message:
+              'Command queue is unavailable',
+          },
+        });
+
+        return;
+      }
+
+      const response: SelectItemResponse = {
         commandId: command.id,
-      });
+        status: 'accepted',
+      };
+
+      res.status(202).json(response);
     },
   );
 
@@ -82,8 +115,11 @@ export const createSelectedItemsRouter = (
 
       if (!isValidId(body.id)) {
         res.status(400).json({
-          error:
-            'id must be a positive safe integer',
+          error: {
+            code: 'VALIDATION_ERROR',
+            message:
+              'id must be a positive safe integer',
+          },
         });
 
         return;
@@ -98,12 +134,37 @@ export const createSelectedItemsRouter = (
         },
       };
 
-      await commandProducer.send(command);
+      commandStore.accept(command.id);
 
-      res.status(202).json({
-        accepted: true,
+      try {
+        await commandProducer.send(
+          command,
+        );
+      } catch {
+        commandStore.fail(
+          command.id,
+          'COMMAND_QUEUE_UNAVAILABLE',
+          'Failed to enqueue command',
+        );
+
+        res.status(503).json({
+          error: {
+            code:
+              'COMMAND_QUEUE_UNAVAILABLE',
+            message:
+              'Command queue is unavailable',
+          },
+        });
+
+        return;
+      }
+
+      const response: UnselectItemResponse = {
         commandId: command.id,
-      });
+        status: 'accepted',
+      };
+
+      res.status(202).json(response);
     },
   );
 
@@ -118,8 +179,11 @@ export const createSelectedItemsRouter = (
         !isValidId(body.targetId)
       ) {
         res.status(400).json({
-          error:
-            'id and targetId must be positive safe integers',
+          error: {
+            code: 'VALIDATION_ERROR',
+            message:
+              'id and targetId must be positive safe integers',
+          },
         });
 
         return;
@@ -130,8 +194,11 @@ export const createSelectedItemsRouter = (
         body.placement !== 'after'
       ) {
         res.status(400).json({
-          error:
-            'placement must be "before" or "after"',
+          error: {
+            code: 'VALIDATION_ERROR',
+            message:
+              'placement must be "before" or "after"',
+          },
         });
 
         return;
@@ -139,8 +206,11 @@ export const createSelectedItemsRouter = (
 
       if (body.id === body.targetId) {
         res.status(400).json({
-          error:
-            'id and targetId must be different',
+          error: {
+            code: 'VALIDATION_ERROR',
+            message:
+              'id and targetId must be different',
+          },
         });
 
         return;
@@ -157,12 +227,37 @@ export const createSelectedItemsRouter = (
         },
       };
 
-      await commandProducer.send(command);
+      commandStore.accept(command.id);
 
-      res.status(202).json({
-        accepted: true,
+      try {
+        await commandProducer.send(
+          command,
+        );
+      } catch {
+        commandStore.fail(
+          command.id,
+          'COMMAND_QUEUE_UNAVAILABLE',
+          'Failed to enqueue command',
+        );
+
+        res.status(503).json({
+          error: {
+            code:
+              'COMMAND_QUEUE_UNAVAILABLE',
+            message:
+              'Command queue is unavailable',
+          },
+        });
+
+        return;
+      }
+
+      const response: ReorderItemResponse = {
         commandId: command.id,
-      });
+        status: 'accepted',
+      };
+
+      res.status(202).json(response);
     },
   );
 

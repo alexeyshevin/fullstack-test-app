@@ -1,11 +1,18 @@
-import type { AddItemCommand, AddItemRequest, GetItemsQuery } from '@app/contracts';
+import type {
+  AddItemCommand,
+  AddItemRequest,
+  AddItemResponse,
+  GetItemsQuery,
+} from '@app/contracts';
 import { Router } from 'express';
 import type { CommandProducer } from '../kafka/command.producer';
 import type { ItemsService } from '../services/item.service';
+import type { CommandStore } from '../store/command.store';
 
 export const createItemsRouter = (
   service: ItemsService,
   commandProducer: CommandProducer,
+  commandStore: CommandStore,
 ): Router => {
   const router = Router();
 
@@ -42,7 +49,11 @@ export const createItemsRouter = (
       body.id <= 0
     ) {
       res.status(400).json({
-        error: 'id must be a positive safe integer',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message:
+            'id must be a positive safe integer',
+        },
       });
 
       return;
@@ -57,12 +68,37 @@ export const createItemsRouter = (
       },
     };
 
-    await commandProducer.send(command);
+    commandStore.accept(command.id);
 
-    res.status(202).json({
-      accepted: true,
+    try {
+      await commandProducer.send(
+        command,
+      );
+    } catch {
+      commandStore.fail(
+        command.id,
+        'COMMAND_QUEUE_UNAVAILABLE',
+        'Failed to enqueue command',
+      );
+
+      res.status(503).json({
+        error: {
+          code:
+            'COMMAND_QUEUE_UNAVAILABLE',
+          message:
+            'Command queue is unavailable',
+        },
+      });
+
+      return;
+    }
+
+    const response: AddItemResponse = {
       commandId: command.id,
-    });
+      status: 'accepted',
+    };
+
+    res.status(202).json(response);
   });
 
   return router;

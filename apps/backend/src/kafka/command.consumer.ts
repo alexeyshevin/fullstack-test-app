@@ -1,12 +1,21 @@
 import type { Command } from '@app/contracts';
 import type { Consumer } from 'kafkajs';
-import type { CommandBatcher } from '../batching/command.batcher';
-import { COMMANDS_TOPIC } from './kafka.config';
+import type {
+  CommandBatcher,
+} from '../batching/command.batcher';
+import {
+  COMMANDS_TOPIC,
+} from './kafka.config';
 
 export class CommandConsumer {
   constructor(
     private readonly consumer: Consumer,
-    private readonly batcher: CommandBatcher,
+
+    private readonly addBatcher:
+      CommandBatcher,
+
+    private readonly mutationBatcher:
+      CommandBatcher,
   ) {}
 
   public async connect(): Promise<void> {
@@ -25,11 +34,17 @@ export class CommandConsumer {
           return;
         }
 
-        const command = JSON.parse(message.value.toString()) as Command;
+        const command =
+          JSON.parse(
+            message.value.toString(),
+          ) as Command;
 
-        console.log('Kafka command received:', command);
+        if (command.type === 'ADD_ITEM') {
+          this.addBatcher.add(command);
+          return;
+        }
 
-        this.batcher.add(command);
+        this.mutationBatcher.add(command);
       },
     });
   }

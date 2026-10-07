@@ -1,8 +1,21 @@
-import type { Command } from '@app/contracts';
+import type {
+  ApiErrorCode,
+  Command,
+} from '@app/contracts';
+import { CommandStore } from '../store/command.store';
 import { MemoryStore } from '../store/memory.store';
+import {
+  InvalidReorderError,
+  ItemAlreadyExistsError,
+  ItemAlreadySelectedError,
+  ItemNotFoundError,
+  ItemNotSelectedError,
+} from '../store/memory.store.errors';
+
 export class CommandHandler {
   constructor(
     private readonly store: MemoryStore,
+    private readonly commandStore: CommandStore,
   ) {}
 
   public handleBatch(
@@ -12,16 +25,45 @@ export class CommandHandler {
       return;
     }
 
+    let hasChanges = false;
+
     for (const command of commands) {
-      this.handle(command);
+      const shouldProcess =
+        this.commandStore.startProcessing(
+          command.id,
+        );
+
+      // duplicate Kafka delivery
+      if (!shouldProcess) {
+        continue;
+      }
+
+      try {
+        this.handle(command);
+
+        this.commandStore.complete(
+          command.id,
+        );
+
+        hasChanges = true;
+      } catch (error) {
+        const normalized =
+          this.normalizeError(error);
+
+        this.commandStore.fail(
+          command.id,
+          normalized.code,
+          normalized.message,
+        );
+      }
     }
 
-    this.store.commit();
+    if (hasChanges) {
+      this.store.commit();
+    }
   }
 
-  private handle(
-    command: Command,
-  ): void {
+  private handle(command: Command): void {
     switch (command.type) {
       case 'ADD_ITEM':
         this.store.addItem(
@@ -52,6 +94,64 @@ export class CommandHandler {
       default:
         this.assertNever(command);
     }
+  }
+
+  private normalizeError(
+    error: unknown,
+  ): {
+    code: ApiErrorCode;
+    message: string;
+  } {
+    if (
+      error instanceof
+      ItemAlreadyExistsError
+    ) {
+      return {
+        code: 'ITEM_ALREADY_EXISTS',
+        message: error.message,
+      };
+    }
+
+    if (
+      error instanceof
+      ItemAlreadySelectedError
+    ) {
+      return {
+        code: 'ITEM_ALREADY_SELECTED',
+        message: error.message,
+      };
+    }
+
+    if (
+      error instanceof
+      ItemNotSelectedError
+    ) {
+      return {
+        code: 'ITEM_NOT_SELECTED',
+        message: error.message,
+      };
+    }
+
+    if (error instanceof ItemNotFoundError) {
+      return {
+        code: 'ITEM_NOT_FOUND',
+        message: error.message,
+      };
+    }
+
+    if (
+      error instanceof InvalidReorderError
+    ) {
+      return {
+        code: 'INVALID_REORDER',
+        message: error.message,
+      };
+    }
+
+    return {
+      code: 'INTERNAL_ERROR',
+      message: 'Internal command processing error',
+    };
   }
 
   private assertNever(

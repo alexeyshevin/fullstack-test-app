@@ -2,20 +2,24 @@ import cors from 'cors';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import type { CommandProducer } from './kafka/command.producer';
+import { createCommandsRouter } from './routes/commands.routes';
 import { createItemsRouter } from './routes/items.routes';
 import { createSelectedItemsRouter } from './routes/selected-items.routes';
 import { ItemsService } from './services/item.service';
 import { SelectedItemsService } from './services/selected-items.service';
-import { MemoryStore } from './store/memory.store';
+import type { CommandStore } from './store/command.store';
+import type { MemoryStore } from './store/memory.store';
 import { openApiDocument } from './swagger/openapi';
 
 type CreateAppDependencies = {
   store: MemoryStore;
+  commandStore: CommandStore;
   commandProducer: CommandProducer;
 };
 
 export const createApp = ({
   store,
+  commandStore,
   commandProducer,
 }: CreateAppDependencies) => {
   const app = express();
@@ -34,6 +38,7 @@ export const createApp = ({
     createItemsRouter(
       itemsService,
       commandProducer,
+      commandStore,
     ),
   );
 
@@ -42,6 +47,14 @@ export const createApp = ({
     createSelectedItemsRouter(
       selectedItemsService,
       commandProducer,
+      commandStore,
+    ),
+  );
+
+  app.use(
+    '/api/commands',
+    createCommandsRouter(
+      commandStore,
     ),
   );
 

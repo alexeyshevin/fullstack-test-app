@@ -1,33 +1,26 @@
-import type { Command } from '@app/contracts';
+import type {
+  Command,
+} from '@app/contracts';
 
 type BatchHandler = (
   commands: Command[],
 ) => Promise<void> | void;
+
 export class CommandBatcher {
   private readonly commands: Command[] = [];
 
-  private timer: NodeJS.Timeout | null = null;
+  private timer: NodeJS.Timeout | null =
+    null;
 
   private flushing = false;
 
   constructor(
-    private readonly maxBatchSize: number,
-    private readonly maxWaitMs: number,
+    private readonly intervalMs: number,
     private readonly handler: BatchHandler,
   ) {}
 
-  public add(
-    command: Command,
-  ): void {
+  public add(command: Command): void {
     this.commands.push(command);
-
-    if (
-      this.commands.length >=
-      this.maxBatchSize
-    ) {
-      void this.flush();
-      return;
-    }
 
     this.ensureTimer();
   }
@@ -46,22 +39,20 @@ export class CommandBatcher {
     const batch =
       this.commands.splice(
         0,
-        this.maxBatchSize,
+        this.commands.length,
       );
 
     try {
       await this.handler(batch);
+    } catch (error) {
+      console.error(
+        'Failed to flush command batch:',
+        error,
+      );
     } finally {
       this.flushing = false;
 
-      if (
-        this.commands.length >=
-        this.maxBatchSize
-      ) {
-        void this.flush();
-      } else if (
-        this.commands.length > 0
-      ) {
+      if (this.commands.length > 0) {
         this.ensureTimer();
       }
     }
@@ -78,7 +69,7 @@ export class CommandBatcher {
 
         void this.flush();
       },
-      this.maxWaitMs,
+      this.intervalMs,
     );
   }
 
