@@ -1,3 +1,5 @@
+import type { ApiErrorCode } from './error';
+
 export type CommandStatus =
   | 'accepted'
   | 'processing'
@@ -7,6 +9,10 @@ export type CommandStatus =
 export type CommandResponse = {
   commandId: string;
   status: CommandStatus;
+  error?: {
+    code: ApiErrorCode;
+    message: string;
+  };
 };
 
 export type CommandAcceptedResponse = {

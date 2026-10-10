@@ -57,11 +57,10 @@ export const waitForCommand = async (
     }
 
     if (command.status === 'failed') {
-
       throw new ApiError(
         409,
-        'INTERNAL_ERROR',
-        'Command failed',
+        command.error?.code ?? 'INTERNAL_ERROR',
+        command.error?.message ?? 'Command failed',
       );
     }
 
