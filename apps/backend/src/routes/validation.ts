@@ -12,6 +12,7 @@ export const isValidPageQuery = (
     next: NextFunction
 ): void => {
   const { cursor, limit, filter } = req.query;
+
   if ((cursor !== undefined && (typeof cursor !== 'string' || !/^-?\d+$/.test(cursor) || !Number.isSafeInteger(Number(cursor)))) ||
       (limit !== undefined && (typeof limit !== 'string' || !/^\d+$/.test(limit) || !Number.isSafeInteger(Number(limit)) || Number(limit) < 1)) ||
       (filter !== undefined && typeof filter !== 'string')) {
