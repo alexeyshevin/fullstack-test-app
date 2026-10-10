@@ -1,4 +1,4 @@
-import type { CommandAcceptedResponse } from '../common/command';
+import type { CommandAcceptedResponse } from '../common/command.js';
 
 export type AddItemRequest = {
   id: number;

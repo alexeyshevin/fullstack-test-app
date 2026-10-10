@@ -1,4 +1,4 @@
-import type { ApiErrorCode } from './error';
+import type { ApiErrorCode } from './error.js';
 
 export type CommandStatus =
   | 'accepted'

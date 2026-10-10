@@ -1,5 +1,5 @@
-import type { ListQuery, PaginatedResponse } from '../common/pagination';
-import { SelectedItemDto } from './selected-item';
+import type { ListQuery, PaginatedResponse } from '../common/pagination.js';
+import { SelectedItemDto } from './selected-item.js';
 
 export type GetSelectedQuery = ListQuery;
 
