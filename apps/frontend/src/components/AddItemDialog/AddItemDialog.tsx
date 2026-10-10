@@ -1,13 +1,13 @@
 import {
-    Alert,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Stack,
-    TextField
+  Alert,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField
 } from '@mui/material';
 import { useState } from 'react';
 import { useAddItem } from '../../hooks/useItemMutations';
@@ -41,12 +41,8 @@ export const AddItemDialog = ({
   const handleSubmit = async () => {
     const id = Number(value);
 
-    if (
-      value.trim() === '' ||
-      !Number.isSafeInteger(id) ||
-      id <= 0
-    ) {
-      setError('You have to add a positive ID');
+    if (value.trim() === '' || !Number.isSafeInteger(id)) {
+      setError('ID must be a safe integer');
       return;
     }
 
@@ -54,7 +50,9 @@ export const AddItemDialog = ({
 
     try {
       await addItem.mutateAsync({ id });
-      handleClose();
+      setValue('');
+      setError(null);
+      onClose();
     } catch (error) {
       setError(
         error instanceof Error
@@ -72,7 +70,7 @@ export const AddItemDialog = ({
       maxWidth="xs"
     >
       <DialogTitle>
-        Добавить элемент
+        Add item
       </DialogTitle>
 
       <DialogContent>
@@ -89,7 +87,6 @@ export const AddItemDialog = ({
             disabled={addItem.isPending}
             slotProps={{
               htmlInput: {
-                min: 1,
                 step: 1,
               },
             }}

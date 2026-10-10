@@ -10,8 +10,28 @@ export type CommandState = {
 };
 
 export class CommandStore {
-  private readonly commands =
-    new Map<string, CommandState>();
+  private readonly commands = new Map<string, CommandState>();
+
+  private readonly pendingKeys = new Map<string, string>();
+
+  private readonly commandKeys = new Map<string, string>();
+
+  public reserveOperation(key: string, commandId: string): string | null {
+    const existing = this.pendingKeys.get(key);
+    if (existing) {
+      return existing;
+    }
+
+    this.pendingKeys.set(key, commandId);
+    this.commandKeys.set(commandId, key);
+    return null;
+  }
+
+  public releaseOperation(key: string, commandId: string): void {
+    if (this.pendingKeys.get(key) === commandId) {
+      this.pendingKeys.delete(key);
+    }
+  }
 
   public accept(commandId: string): void {
     if (this.commands.has(commandId)) {
@@ -27,8 +47,7 @@ export class CommandStore {
   public startProcessing(
     commandId: string,
   ): boolean {
-    const command =
-      this.commands.get(commandId);
+    const command = this.commands.get(commandId);
 
     if (!command) {
       this.commands.set(commandId, {
@@ -56,6 +75,7 @@ export class CommandStore {
   }
 
   public complete(commandId: string): void {
+    this.releaseByCommand(commandId);
     this.commands.set(commandId, {
       commandId,
       status: 'completed',
@@ -67,6 +87,7 @@ export class CommandStore {
     code: ApiErrorCode,
     message: string,
   ): void {
+    this.releaseByCommand(commandId);
     this.commands.set(commandId, {
       commandId,
       status: 'failed',
@@ -75,6 +96,14 @@ export class CommandStore {
         message,
       },
     });
+  }
+
+  private releaseByCommand(commandId: string): void {
+    const key = this.commandKeys.get(commandId);
+    if (key !== undefined) {
+      this.releaseOperation(key, commandId);
+      this.commandKeys.delete(commandId);
+    }
   }
 
   public get(

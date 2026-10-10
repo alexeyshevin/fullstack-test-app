@@ -1,11 +1,8 @@
 import type { Command } from '@app/contracts';
 import type { Consumer } from 'kafkajs';
-import type {
-  CommandBatcher,
-} from '../batching/command.batcher';
-import {
-  COMMANDS_TOPIC,
-} from './kafka.config';
+import type { CommandBatcher } from '../batching/command.batcher';
+import type { PendingItemsStore } from '../store/pending-items.store';
+import { COMMANDS_TOPIC } from './kafka.config';
 
 export class CommandConsumer {
   constructor(
@@ -16,6 +13,7 @@ export class CommandConsumer {
 
     private readonly mutationBatcher:
       CommandBatcher,
+    private readonly pendingItemsStore: PendingItemsStore,
   ) {}
 
   public async connect(): Promise<void> {
@@ -39,7 +37,7 @@ export class CommandConsumer {
             message.value.toString(),
           ) as Command;
 
-        if (command.type === 'ADD_ITEM') {
+        if (command.type === 'ADD_ITEM' || this.pendingItemsStore.has(command.payload.id)) {
           this.addBatcher.add(command);
           return;
         }

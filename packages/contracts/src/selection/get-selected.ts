@@ -3,5 +3,4 @@ import { SelectedItemDto } from './selected-item';
 
 export type GetSelectedQuery = ListQuery;
 
-export type GetSelectedResponse =
-  PaginatedResponse<SelectedItemDto>;
+export type GetSelectedResponse = PaginatedResponse<SelectedItemDto>;

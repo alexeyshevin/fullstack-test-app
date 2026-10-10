@@ -1,23 +1,25 @@
 import type {
   AddItemCommand,
-  AddItemRequest,
   AddItemResponse,
-  GetItemsQuery,
+  GetItemsQuery
 } from '@app/contracts';
 import { Router } from 'express';
+import type { ReadBatcher } from '../batching/read.batcher';
 import type { CommandProducer } from '../kafka/command.producer';
 import type { ItemsService } from '../services/item.service';
 import type { CommandStore } from '../store/command.store';
 import type { PendingItemsStore } from '../store/pending-items.store';
+import { isRecord, isValidId, isValidPageQuery } from './validation';
 export const createItemsRouter = (
   service: ItemsService,
   commandProducer: CommandProducer,
   commandStore: CommandStore,
   pendingItemsStore: PendingItemsStore,
+  readBatcher: ReadBatcher,
 ): Router => {
   const router = Router();
 
-  router.get('/', (req, res) => {
+  router.get('/', isValidPageQuery, async (req, res) => {
     const query: GetItemsQuery = {
       cursor:
         typeof req.query.cursor === 'string'
@@ -35,25 +37,27 @@ export const createItemsRouter = (
           : undefined,
     };
 
-    const result =
-      service.getItems(query);
-
-    res.json(result);
+    try {
+      const result = await readBatcher.enqueue('items:' + JSON.stringify(query), () => service.getItems(query));
+      res.json(result);
+    } catch {
+      res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to read items' } });
+    }
   });
 
   router.post('/', async (req, res) => {
     const body =
-      req.body as AddItemRequest;
+      req.body as unknown;
 
     if (
-      !Number.isSafeInteger(body.id) ||
-      body.id <= 0
+      !isRecord(body) ||
+      !isValidId(body.id)
     ) {
       res.status(400).json({
         error: {
           code: 'VALIDATION_ERROR',
           message:
-            'id must be a positive safe integer',
+            'id must be a safe integer',
         },
       });
 

@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
+import { ReadBatcher } from './batching/read.batcher';
 import type { CommandProducer } from './kafka/command.producer';
 import { createCommandsRouter } from './routes/commands.routes';
 import { createItemsRouter } from './routes/items.routes';
@@ -26,15 +27,14 @@ export const createApp = ({
   pendingItemsStore
 }: CreateAppDependencies) => {
   const app = express();
+  const readBatcher = new ReadBatcher();
 
   app.use(cors());
   app.use(express.json());
 
-  const itemsService =
-    new ItemsService(store);
+  const itemsService = new ItemsService(store);
 
-  const selectedItemsService =
-    new SelectedItemsService(store);
+  const selectedItemsService = new SelectedItemsService(store);
 
   app.use(
     '/api/items',
@@ -42,7 +42,8 @@ export const createApp = ({
       itemsService,
       commandProducer,
       commandStore,
-      pendingItemsStore
+      pendingItemsStore,
+      readBatcher
     ),
   );
 
@@ -52,6 +53,7 @@ export const createApp = ({
       selectedItemsService,
       commandProducer,
       commandStore,
+      readBatcher,
     ),
   );
 

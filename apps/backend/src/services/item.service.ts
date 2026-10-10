@@ -20,31 +20,53 @@ export class ItemsService {
 
     const collectedItems: ItemDto[] = [];
 
-    this.collectDefaultItems(
-      collectedItems,
-      cursor,
-      limit,
-      query.filter,
-    );
+    // Custom negative IDs and zero precede the default positive range.
+    const custom = [...this.store.getCustomItems()].sort((a, b) => a - b);
 
+    const filter = query.filter;
+    const matches = (id: number) => !this.store.isSelected(id) && this.matchesFilter(id, filter);
+    for (const id of custom) {
+      if (id >= 1) {
+        break;
+      }
+
+      if ((cursor === null || id > cursor) && matches(id)) {
+        collectedItems.push({ id });
+      }
+
+      if (collectedItems.length > limit) {
+        break;
+      }
+    }
     if (collectedItems.length <= limit) {
-      this.collectCustomItems(
-        collectedItems,
-        cursor,
-        limit,
-        query.filter,
-      );
+      let id = Math.max((cursor ?? 0) + 1, 1);
+      while (id <= DEFAULT_MAX_ID && collectedItems.length <= limit) {
+        if (matches(id)) collectedItems.push({ id });
+        id++;
+      }
     }
 
-    const hasMore =
-      collectedItems.length > limit;
+    if (collectedItems.length <= limit) {
+      for (const id of custom) {
+        if (id <= DEFAULT_MAX_ID || (cursor !== null && id <= cursor)) {
+          continue;
+        }
 
-    const items = hasMore
-      ? collectedItems.slice(0, limit)
-      : collectedItems;
+        if (matches(id)) {
+          collectedItems.push({ id });
+        }
 
-    const lastItem =
-      items[items.length - 1];
+        if (collectedItems.length > limit) {
+          break;
+        }
+      }
+    }
+
+    const hasMore = collectedItems.length > limit;
+
+    const items = hasMore ? collectedItems.slice(0, limit) : collectedItems;
+
+    const lastItem = items[items.length - 1];
 
     return {
       items,
@@ -55,55 +77,6 @@ export class ItemsService {
           : null,
       version: this.store.getVersion(),
     };
-  }
-
-  private collectDefaultItems(
-    result: ItemDto[],
-    cursor: number,
-    limit: number,
-    filter?: string,
-  ): void {
-    let id = Math.max(cursor + 1, 1);
-
-    while (
-      id <= DEFAULT_MAX_ID &&
-      result.length <= limit
-    ) {
-      if (
-        !this.store.isSelected(id) &&
-        this.matchesFilter(id, filter)
-      ) {
-        result.push({ id });
-      }
-
-      id++;
-    }
-  }
-
-  private collectCustomItems(
-    result: ItemDto[],
-    cursor: number,
-    limit: number,
-    filter?: string,
-  ): void {
-    const customItems = [
-      ...this.store.getCustomItems(),
-    ]
-      .filter(id => id > cursor)
-      .sort((a, b) => a - b);
-
-    for (const id of customItems) {
-      if (result.length > limit) {
-        break;
-      }
-
-      if (
-        !this.store.isSelected(id) &&
-        this.matchesFilter(id, filter)
-      ) {
-        result.push({ id });
-      }
-    }
   }
 
   private matchesFilter(
@@ -119,18 +92,18 @@ export class ItemsService {
 
   private parseCursor(
     cursor?: string,
-  ): number {
-    if (!cursor) {
-      return 0;
+  ): number | null {
+    if (cursor === undefined) {
+      return null;
     }
 
     const parsedCursor = Number(cursor);
 
     if (
       !Number.isSafeInteger(parsedCursor) ||
-      parsedCursor < 0
+      !Number.isFinite(parsedCursor)
     ) {
-      return 0;
+      return null;
     }
 
     return parsedCursor;

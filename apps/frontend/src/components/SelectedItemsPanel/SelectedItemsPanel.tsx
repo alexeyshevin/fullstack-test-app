@@ -186,7 +186,7 @@ export const SelectedItemsPanel = () => {
             disabled={isFetching || isReordering}
             sx={{ alignSelf: 'flex-start' }}
           >
-            Обновить
+            Update
           </Button>
 
           {isReordering && (

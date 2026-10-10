@@ -1,28 +1,28 @@
 import type {
   GetSelectedQuery,
   ReorderItemCommand,
-  ReorderItemRequest,
   ReorderItemResponse,
   SelectItemCommand,
-  SelectItemRequest,
   SelectItemResponse,
   UnselectItemCommand,
-  UnselectItemRequest,
-  UnselectItemResponse,
+  UnselectItemResponse
 } from '@app/contracts';
 import { Router } from 'express';
+import type { ReadBatcher } from '../batching/read.batcher';
 import type { CommandProducer } from '../kafka/command.producer';
 import type { SelectedItemsService } from '../services/selected-items.service';
 import type { CommandStore } from '../store/command.store';
+import { isRecord, isValidId, isValidPageQuery } from './validation';
 
 export const createSelectedItemsRouter = (
   service: SelectedItemsService,
   commandProducer: CommandProducer,
   commandStore: CommandStore,
+  readBatcher: ReadBatcher,
 ): Router => {
   const router = Router();
 
-  router.get('/', (req, res) => {
+  router.get('/', isValidPageQuery, async (req, res) => {
     const query: GetSelectedQuery = {
       cursor:
         typeof req.query.cursor === 'string'
@@ -40,24 +40,26 @@ export const createSelectedItemsRouter = (
           : undefined,
     };
 
-    const result =
-      service.getSelectedItems(query);
-
-    res.json(result);
+    try {
+      const result = await readBatcher.enqueue('selected:' + JSON.stringify(query), () => service.getSelectedItems(query));
+      res.json(result);
+    } catch {
+      res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to read selected items' } });
+    }
   });
 
   router.post(
     '/select',
     async (req, res) => {
       const body =
-        req.body as SelectItemRequest;
+        req.body as unknown;
 
-      if (!isValidId(body.id)) {
+      if (!isRecord(body) || !isValidId(body.id)) {
         res.status(400).json({
           error: {
             code: 'VALIDATION_ERROR',
             message:
-              'id must be a positive safe integer',
+              'id must be a safe integer',
           },
         });
 
@@ -73,6 +75,12 @@ export const createSelectedItemsRouter = (
         },
       };
 
+      const operationKey = `${command.type}:${command.payload.id}`;
+      const existingId = commandStore.reserveOperation(operationKey, command.id);
+      if (existingId) {
+        res.status(202).json({ commandId: existingId, status: 'accepted' });
+        return;
+      }
       commandStore.accept(command.id);
 
       try {
@@ -111,14 +119,14 @@ export const createSelectedItemsRouter = (
     '/unselect',
     async (req, res) => {
       const body =
-        req.body as UnselectItemRequest;
+        req.body as unknown;
 
-      if (!isValidId(body.id)) {
+      if (!isRecord(body) || !isValidId(body.id)) {
         res.status(400).json({
           error: {
             code: 'VALIDATION_ERROR',
             message:
-              'id must be a positive safe integer',
+              'id must be a safe integer',
           },
         });
 
@@ -134,6 +142,12 @@ export const createSelectedItemsRouter = (
         },
       };
 
+      const operationKey = `${command.type}:${command.payload.id}`;
+      const existingId = commandStore.reserveOperation(operationKey, command.id);
+      if (existingId) {
+        res.status(202).json({ commandId: existingId, status: 'accepted' });
+        return;
+      }
       commandStore.accept(command.id);
 
       try {
@@ -172,9 +186,10 @@ export const createSelectedItemsRouter = (
     '/reorder',
     async (req, res) => {
       const body =
-        req.body as ReorderItemRequest;
+        req.body as unknown;
 
       if (
+        !isRecord(body) ||
         !isValidId(body.id) ||
         !isValidId(body.targetId)
       ) {
@@ -182,7 +197,7 @@ export const createSelectedItemsRouter = (
           error: {
             code: 'VALIDATION_ERROR',
             message:
-              'id and targetId must be positive safe integers',
+              'id and targetId must be safe integers',
           },
         });
 
@@ -227,6 +242,12 @@ export const createSelectedItemsRouter = (
         },
       };
 
+      const operationKey = `${command.type}:${command.payload.id}:${command.payload.targetId}:${command.payload.placement}`;
+      const existingId = commandStore.reserveOperation(operationKey, command.id);
+      if (existingId) {
+        res.status(202).json({ commandId: existingId, status: 'accepted' });
+        return;
+      }
       commandStore.accept(command.id);
 
       try {
@@ -264,8 +285,3 @@ export const createSelectedItemsRouter = (
   return router;
 };
 
-const isValidId = (
-  value: unknown,
-): value is number =>
-  Number.isSafeInteger(value) &&
-  (value as number) > 0;
