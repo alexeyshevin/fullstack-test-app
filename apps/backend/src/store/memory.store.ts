@@ -10,29 +10,9 @@ import {
 export type ReorderPlacement = 'before' | 'after';
 
 export class MemoryStore {
-  /**
-   * Дополнительные элементы, созданные пользователем.
-   *
-   * Исходные элементы 1...1_000_000 здесь не хранятся.
-   */
   private readonly customItems = new Set<number>();
-
-  /**
-   * Выбранные элементы в том порядке,
-   * в котором они должны отображаться.
-   */
   private readonly selectedIds: number[] = [];
-
-  /**
-   * Те же выбранные элементы для быстрого поиска.
-   */
   private readonly selectedSet = new Set<number>();
-
-  /**
-   * Версия committed state.
-   *
-   * Увеличивается после применения batch.
-   */
   private version = 0;
 
   public getVersion(): number {
