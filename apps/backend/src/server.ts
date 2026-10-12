@@ -92,7 +92,7 @@ const start = async (): Promise<void> => {
       pendingItemsStore
     });
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
 
       console.log(`Swagger: http://localhost:${PORT}/api/docs`);
